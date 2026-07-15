@@ -118,6 +118,13 @@ button {
   background: rgba(255,95,109,0.12);
 }
 
+.helper-text {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
 form {
   display: grid;
   gap: 14px;
@@ -183,6 +190,13 @@ form {
   border-radius: 20px;
   padding: 14px;
   background: linear-gradient(180deg, #fff 0%, #fff9f7 100%);
+}
+
+.field.field--error input,
+.field.field--error select {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+  background: #fff8f8;
 }
 
 .product-row {

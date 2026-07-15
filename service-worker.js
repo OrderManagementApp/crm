@@ -2,8 +2,10 @@ const CACHE_NAME = "swiftorder-cache-v1";
 const ASSETS = [
   "./",
   "./index.html",
+  "./inventory.html",
   "./style.css",
   "./app.js",
+  "./inventory.js",
   "./manifest.json",
   "./icons/icon-192.svg",
   "./icons/icon-512.svg"

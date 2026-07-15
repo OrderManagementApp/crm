@@ -20,7 +20,7 @@
       </header>
 
       <main class="container">
-        <section class="card form-card">
+        <section id="customerSection" class="card form-card">
           <div class="card-header">
             <div>
               <p class="eyebrow">Order Placement</p>
@@ -32,22 +32,23 @@
           <form id="customerForm" novalidate>
             <label class="field">
               <span>Customer Name</span>
-              <input id="customerName" type="text" placeholder="Enter customer name" required />
+              <input id="customerName" type="text" placeholder="Enter customer name" pattern="[A-Za-z ]+" maxlength="50" autocomplete="name" required />
             </label>
 
             <label class="field">
               <span>WhatsApp Number</span>
-              <input id="phone" type="tel" inputmode="numeric" placeholder="10 digits only" required />
+              <input id="phone" type="tel" inputmode="numeric" placeholder="10 digits starting with 6/7/8/9" pattern="[6789][0-9]{9}" maxlength="10" required />
             </label>
 
             <button id="placeOrderBtn" class="primary-btn" type="button">Place Order</button>
+            <p class="helper-text">After your details are confirmed, you’ll move to the product selection screen.</p>
           </form>
         </section>
 
         <section id="productsSection" class="card products-card hidden" aria-live="polite">
           <div class="card-header">
             <div>
-              <p class="eyebrow">What would you like?</p>
+              <p class="eyebrow">Step 2</p>
               <h2>Order Items</h2>
             </div>
             <span class="pill accent">Add multiple</span>
@@ -56,7 +57,7 @@
           <div id="productsList" class="products-list"></div>
 
           <div class="sticky-actions">
-            <button id="addProductBtn" class="secondary-btn" type="button">Add Product</button>
+            <button id="addProductBtn" class="secondary-btn" type="button" disabled>Add Product</button>
             <button id="submitOrderBtn" class="primary-btn" type="button">Submit Order</button>
           </div>
         </section>
