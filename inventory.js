@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx70dAUAtJC76OqPJFXMe_KOnl4xm1j-xzA3whyxGVYF4lnRFElIDLuH8FFxgCmZ0l5/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzW3D9O-6Sirh0QZV8r-qONSkRs23o_fA7HLLMHr8o6kQWWtv1jy1IlJyl6paFGoTU8/exec";
 
 const inventoryForm = document.getElementById("inventoryForm");
 const productNameInput = document.getElementById("productName");
@@ -82,15 +82,35 @@ async function handleInventorySubmit(event) {
       body: formData
     });
 
-    if (!response.ok) throw new Error("Upload failed");
+    const contentType = response.headers.get("content-type") || "";
+    let result = {};
 
-    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const bodyText = await response.text().catch(() => "");
+      console.error("Inventory API error response:", response.status, response.statusText, bodyText);
+      throw new Error("Upload failed");
+    }
+
+    if (contentType.includes("application/json")) {
+      result = await response.json().catch(() => ({}));
+    } else {
+      const bodyText = await response.text().catch(() => "");
+      if (bodyText.includes("Script function not found")) {
+        throw new Error("Backend script missing doPost.");
+      }
+      if (bodyText.trim().startsWith("<")) {
+        console.error("Inventory API returned HTML instead of JSON:", bodyText.slice(0, 500));
+        throw new Error("Invalid backend response.");
+      }
+    }
+
     showToast("Inventory saved successfully.", "success");
     inventoryForm.reset();
     imagePreview.classList.add("hidden");
     imagePreview.innerHTML = "";
   } catch (error) {
-    showToast("Could not save inventory. Try again later.", "error");
+    console.error("Inventory submit failed:", error);
+    showToast(error.message || "Could not save inventory. Try again later.", "error");
   } finally {
     loadingOverlay.classList.add("hidden");
     loadingOverlay.setAttribute("aria-hidden", "true");
