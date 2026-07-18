@@ -1,4 +1,4 @@
-const API_URL = "https://script.google.com/macros/s/AKfycbx70dAUAtJC76OqPJFXMe_KOnl4xm1j-xzA3whyxGVYF4lnRFElIDLuH8FFxgCmZ0l5/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbzW3D9O-6Sirh0QZV8r-qONSkRs23o_fA7HLLMHr8o6kQWWtv1jy1IlJyl6paFGoTU8/exec";
 
 const state = {
   products: [],
@@ -92,12 +92,24 @@ function attachEvents() {
   });
 }
 
+function normalizeProducts(products = []) {
+  return products
+    .map((product) => ({
+      id: String(product.id || product.Id || product.productId || product["Product ID"] || product["product id"] || "").trim(),
+      name: String(product.name || product.Name || product.productName || product["Product Name"] || "").trim()
+    }))
+    .filter((product) => product.id && product.name);
+}
+
 async function loadProducts() {
   try {
-    const response = await fetch(`${API_URL}?action=getProducts`, { method: "GET" });
+    const response = await fetch(`${API_URL}?action=getProducts&cacheBust=${Date.now()}`, {
+      method: "GET",
+      cache: "no-store"
+    });
     if (!response.ok) throw new Error("API unavailable");
     const data = await response.json();
-    state.products = Array.isArray(data) ? data : [];
+    state.products = normalizeProducts(Array.isArray(data) ? data : []);
   } catch (error) {
     state.products = [
       { id: "P001", name: "Soap" },
@@ -315,7 +327,13 @@ async function handleSubmitOrder() {
     const payload = {
       customerName,
       phone,
-      items: validItems.map((item) => ({ productId: item.productId, qty: Number(item.qty) }))
+      items: validItems.map((item) => {
+        const selectedProduct = state.products.find((product) => product.id === item.productId);
+        return {
+          productId: selectedProduct ? selectedProduct.name : item.productId,
+          qty: Number(item.qty)
+        };
+      })
     };
 
     await new Promise((resolve) => setTimeout(resolve, 1400));
@@ -326,18 +344,33 @@ async function handleSubmitOrder() {
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) throw new Error("Request failed");
+    const contentType = response.headers.get("content-type") || "";
+    let result = {};
 
-    const result = await response.json().catch(() => ({}));
+    if (contentType.includes("application/json")) {
+      result = await response.json().catch(() => ({}));
+    } else {
+      const bodyText = await response.text().catch(() => "");
+      if (bodyText.includes("Script function not found")) {
+        throw new Error("Backend script missing doPost.");
+      }
+      if (bodyText.trim().startsWith("<")) {
+        console.error("Order API returned HTML instead of JSON:", bodyText.slice(0, 500));
+        throw new Error("Invalid backend response.");
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(result.error || "Request failed");
+    }
+
     state.orderNumber = result.orderNumber || generateOrderNumber();
     orderNumberEl.textContent = state.orderNumber;
     successModal.classList.remove("hidden");
     successModal.setAttribute("aria-hidden", "false");
   } catch (error) {
-    state.orderNumber = generateOrderNumber();
-    orderNumberEl.textContent = state.orderNumber;
-    successModal.classList.remove("hidden");
-    successModal.setAttribute("aria-hidden", "false");
+    console.error("Order submit failed:", error);
+    showToast(error.message || "Could not submit order. Try again later.", "error");
   } finally {
     loadingOverlay.classList.add("hidden");
     loadingOverlay.setAttribute("aria-hidden", "true");
